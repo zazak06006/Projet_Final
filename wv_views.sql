@@ -66,3 +66,35 @@ FROM
 WHERE
     pp.end_time IS NOT NULL AND
     t.start_time IS NOT NULL;
+
+--------------------------------
+-- ALL_PLAYERS_STATS - Vue des statistiques de joueurs avec temps moyen de décision
+CREATE OR ALTER VIEW ALL_PLAYERS_STATS AS
+SELECT 
+    p.pseudo AS 'nom du joueur',
+    r.description_role AS 'role parmi loup et villageois',
+    pa.title_party AS 'nom de la partie',
+    COUNT(DISTINCT pp.id_turn) AS 'nb de tours joués par le joueur',
+    (SELECT COUNT(*) FROM turns t2 WHERE t2.id_party = pa.id_party) AS 'nb total de tours de la partie',
+    CASE 
+        WHEN pa.winner_role = r.description_role THEN 'Victoire'
+        WHEN pa.winner_role IS NULL THEN 'Partie en cours'
+        ELSE 'Défaite'
+    END AS 'vainqueur dépendant du rôle du joueur',
+    AVG(DATEDIFF(SECOND, t.start_time, pp.end_time)) AS 'temps moyen de prise de décision du joueur'
+FROM 
+    players p
+    INNER JOIN players_in_parties pip ON p.id_player = pip.id_player
+    INNER JOIN parties pa ON pip.id_party = pa.id_party
+    INNER JOIN roles r ON pip.id_role = r.id_role
+    LEFT JOIN players_play pp ON p.id_player = pp.id_player
+    LEFT JOIN turns t ON pp.id_turn = t.id_turn AND t.id_party = pa.id_party
+WHERE
+    pp.end_time IS NOT NULL AND
+    t.start_time IS NOT NULL
+GROUP BY 
+    p.pseudo,
+    r.description_role,
+    pa.title_party,
+    pa.id_party,
+    pa.winner_role;
