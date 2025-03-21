@@ -28,42 +28,41 @@ RETURN
 -- random_role - qui renvoie le prochain rôle à affecter au joueur en cours d’inscription
 --Création de la fonction
 CREATE OR ALTER FUNCTION random_role(@partyid INT)
-RETURNS INT
+RETURNS VARCHAR(50)
 AS
 BEGIN
     DECLARE @total_players INT;
-    DECLARE @current_wolves INT;
-    DECLARE @current_villagers INT;
+    DECLARE @current_wolves INT = 0;
     DECLARE @wolf_quota INT;
-    DECLARE @villager_quota INT;
-    DECLARE @next_role INT;
+    DECLARE @next_role VARCHAR(50);
 
-    -- Définition des quotas (ex: 25% de loups, 75% de villageois)
+    -- Count total players in the party
     SELECT @total_players = COUNT(*) FROM players_in_parties WHERE id_party = @partyid;
-    SET @wolf_quota = CEILING(@total_players * 0.25); -- 25% de loups
-    SET @villager_quota = @total_players - @wolf_quota; -- 75% de villageois
 
-    -- Compter les rôles déjà attribués
-    SELECT 
-        @current_wolves = COUNT(CASE WHEN r.description_role = 'Loup' THEN 1 END),
-        @current_villagers = COUNT(CASE WHEN r.description_role = 'Villageois' THEN 1 END)
+    -- Calculate wolf quota (25% wolves, 75% villagers)
+    SET @wolf_quota = CEILING(@total_players * 0.25);
+
+    -- Count already assigned wolves
+    SELECT @current_wolves = COUNT(*)
     FROM players_in_parties pip
     JOIN roles r ON pip.id_role = r.id_role
-    WHERE pip.id_party = @partyid;
+    WHERE pip.id_party = @partyid AND r.description_role = 'Loup';
 
-    -- Déterminer le rôle à assigner en respectant les quotas
+    -- Assign role based on quota
     IF @current_wolves < @wolf_quota
-        SET @next_role = (SELECT id_role FROM roles WHERE description_role = 'Loup');
+        SET @next_role = 'Loup';
     ELSE
-        SET @next_role = (SELECT id_role FROM roles WHERE description_role = 'Villageois');
+        SET @next_role = 'Villageois';
 
     RETURN @next_role;
 END;
+GO
+
 
 --------------------------------
 -- random_position - qui renvoie une position aléatoire non encore utilisée dans une partie
 --Création de la fonction
-CREATE FUNCTION random_position(
+CREATE OR ALTER FUNCTION random_position(
     @id_party INT
 )
 RETURNS @result TABLE (

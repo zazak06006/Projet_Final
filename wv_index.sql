@@ -41,9 +41,7 @@ CREATE TABLE turns (
     id_party INT NOT NULL,
     start_time DATETIME NOT NULL,
     end_time DATETIME NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'IN_PROGRESS', -- Ajout d'une colonne status pour suivre l'état du tour
     CONSTRAINT FK_turns_parties FOREIGN KEY (id_party) REFERENCES parties(id_party),
-    CONSTRAINT CK_turns_status CHECK (status IN ('IN_PROGRESS', 'COMPLETED', 'CANCELLED'))
 );
 
 CREATE TABLE players_play (
