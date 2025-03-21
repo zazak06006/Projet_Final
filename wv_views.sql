@@ -49,4 +49,20 @@ GROUP BY
 
 
 --------------------------------
--- ALL_PLAYERS_ELAPSED_TOUR - Vue détaillée des joueurs avec leur temps de jeu par tour
+-- ALL_PLAYERS_ELAPSED_TOUR - Vue détaillée du temps de prise de décision par tour
+CREATE OR ALTER VIEW ALL_PLAYERS_ELAPSED_TOUR AS
+SELECT 
+    p.pseudo AS 'nom du joueur',
+    pa.title_party AS 'nom de la partie',
+    t.id_turn AS 'n° du tour',  -- Changé de num_turn à id_turn
+    t.start_time AS 'date et heure du début du tour',
+    pp.end_time AS 'date et heure de la prise de décision du joueur dans le tour',
+    DATEDIFF(SECOND, t.start_time, pp.end_time) AS 'nb de secondes passées dans le tour pour le joueur'
+FROM 
+    players p
+    INNER JOIN players_play pp ON p.id_player = pp.id_player
+    INNER JOIN turns t ON pp.id_turn = t.id_turn
+    INNER JOIN parties pa ON t.id_party = pa.id_party
+WHERE
+    pp.end_time IS NOT NULL AND
+    t.start_time IS NOT NULL;
