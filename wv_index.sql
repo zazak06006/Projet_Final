@@ -1,10 +1,6 @@
--- Résumé des modifications SQL entre les deux fichiers 
--- Pour exo-Views
-
--- 1. Ajout de la sélection de base de données et suppression des tables existantes
 USE testsql;
-GO
 
+-- Suppression des tables existantes pour les recréer proprement
 IF OBJECT_ID('players_play', 'U') IS NOT NULL DROP TABLE players_play;
 IF OBJECT_ID('turns', 'U') IS NOT NULL DROP TABLE turns;
 IF OBJECT_ID('players_in_parties', 'U') IS NOT NULL DROP TABLE players_in_parties;
@@ -12,97 +8,55 @@ IF OBJECT_ID('players', 'U') IS NOT NULL DROP TABLE players;
 IF OBJECT_ID('roles', 'U') IS NOT NULL DROP TABLE roles;
 IF OBJECT_ID('parties', 'U') IS NOT NULL DROP TABLE parties;
 
--- 2. Modifications pour la table parties
--- Avant: id_party int, title_party text
--- Après:
-ALTER TABLE parties 
-    ALTER COLUMN id_party INT NOT NULL;
-ALTER TABLE parties 
-    ALTER COLUMN title_party VARCHAR(255) NOT NULL;
-ALTER TABLE parties 
-    ADD CONSTRAINT PK_parties PRIMARY KEY (id_party);
+-- Création des tables avec les bonnes contraintes
+CREATE TABLE parties (
+    id_party INT NOT NULL PRIMARY KEY,
+    title_party VARCHAR(255) NOT NULL,
+    winner_role VARCHAR(255) NULL  -- Ajout de la colonne pour stocker le rôle gagnant
+);
 
--- 3. Modifications pour la table roles
--- Avant: id_role int, description_role text
--- Après:
-ALTER TABLE roles 
-    ALTER COLUMN id_role INT NOT NULL;
-ALTER TABLE roles 
-    ALTER COLUMN description_role VARCHAR(255) NOT NULL;
-ALTER TABLE roles 
-    ADD CONSTRAINT PK_roles PRIMARY KEY (id_role);
+CREATE TABLE roles (
+    id_role INT NOT NULL PRIMARY KEY,
+    description_role VARCHAR(255) NOT NULL
+);
 
--- 4. Modifications pour la table players
--- Avant: id_player int, pseudo text
--- Après:
-ALTER TABLE players 
-    ALTER COLUMN id_player INT NOT NULL;
-ALTER TABLE players 
-    ALTER COLUMN pseudo VARCHAR(255) NOT NULL;
-ALTER TABLE players 
-    ADD CONSTRAINT PK_players PRIMARY KEY (id_player);
+CREATE TABLE players (
+    id_player INT NOT NULL PRIMARY KEY,
+    pseudo VARCHAR(255) NOT NULL
+);
 
--- 5. Modifications pour la table players_in_parties
--- Avant: id_party int, id_player int, id_role int, is_alive text
--- Après:
-ALTER TABLE players_in_parties 
-    ALTER COLUMN id_party INT NOT NULL;
-ALTER TABLE players_in_parties 
-    ALTER COLUMN id_player INT NOT NULL;
-ALTER TABLE players_in_parties 
-    ALTER COLUMN id_role INT NOT NULL;
-ALTER TABLE players_in_parties 
-    ALTER COLUMN is_alive VARCHAR(5) NOT NULL;
-ALTER TABLE players_in_parties 
-    ADD CONSTRAINT PK_players_in_parties PRIMARY KEY (id_party, id_player);
-ALTER TABLE players_in_parties 
-    ADD CONSTRAINT FK_pip_parties FOREIGN KEY (id_party) REFERENCES parties(id_party);
-ALTER TABLE players_in_parties 
-    ADD CONSTRAINT FK_pip_players FOREIGN KEY (id_player) REFERENCES players(id_player);
-ALTER TABLE players_in_parties 
-    ADD CONSTRAINT FK_pip_roles FOREIGN KEY (id_role) REFERENCES roles(id_role);
+CREATE TABLE players_in_parties (
+    id_party INT NOT NULL,
+    id_player INT NOT NULL,
+    id_role INT NOT NULL,
+    is_alive VARCHAR(5) NOT NULL,
+    CONSTRAINT PK_players_in_parties PRIMARY KEY (id_party, id_player),
+    CONSTRAINT FK_pip_parties FOREIGN KEY (id_party) REFERENCES parties(id_party),
+    CONSTRAINT FK_pip_players FOREIGN KEY (id_player) REFERENCES players(id_player),
+    CONSTRAINT FK_pip_roles FOREIGN KEY (id_role) REFERENCES roles(id_role)
+);
 
--- 6. Modifications pour la table turns
--- Avant: id_turn int, id_party int, start_time datetime, end_time datetime
--- Après:
-ALTER TABLE turns 
-    ALTER COLUMN id_turn INT NOT NULL;
-ALTER TABLE turns 
-    ALTER COLUMN id_party INT NOT NULL;
-ALTER TABLE turns 
-    ALTER COLUMN start_time DATETIME NOT NULL;
-ALTER TABLE turns 
-    ALTER COLUMN end_time DATETIME NOT NULL;
-ALTER TABLE turns 
-    ADD CONSTRAINT PK_turns PRIMARY KEY (id_turn);
-ALTER TABLE turns 
-    ADD CONSTRAINT FK_turns_parties FOREIGN KEY (id_party) REFERENCES parties(id_party);
+CREATE TABLE turns (
+    id_turn INT NOT NULL PRIMARY KEY,
+    id_party INT NOT NULL,
+    start_time DATETIME NOT NULL,
+    end_time DATETIME NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'IN_PROGRESS', -- Ajout d'une colonne status pour suivre l'état du tour
+    CONSTRAINT FK_turns_parties FOREIGN KEY (id_party) REFERENCES parties(id_party),
+    CONSTRAINT CK_turns_status CHECK (status IN ('IN_PROGRESS', 'COMPLETED', 'CANCELLED'))
+);
 
--- 7. Modifications pour la table players_play
--- Avant: id_player int, id_turn int, start_time datetime, end_time datetime, action varchar(10),
---        origin_position_col text, origin_position_row text, target_position_col text, target_position_row text
--- Après:
-ALTER TABLE players_play 
-    ALTER COLUMN id_player INT NOT NULL;
-ALTER TABLE players_play 
-    ALTER COLUMN id_turn INT NOT NULL;
-ALTER TABLE players_play 
-    ALTER COLUMN start_time DATETIME NOT NULL;
-ALTER TABLE players_play 
-    ALTER COLUMN end_time DATETIME NOT NULL;
-ALTER TABLE players_play 
-    ALTER COLUMN action VARCHAR(10) NOT NULL;
-ALTER TABLE players_play 
-    ALTER COLUMN origin_position_col VARCHAR(10) NULL;
-ALTER TABLE players_play 
-    ALTER COLUMN origin_position_row VARCHAR(10) NULL;
-ALTER TABLE players_play 
-    ALTER COLUMN target_position_col VARCHAR(10) NULL;
-ALTER TABLE players_play 
-    ALTER COLUMN target_position_row VARCHAR(10) NULL;
-ALTER TABLE players_play 
-    ADD CONSTRAINT PK_players_play PRIMARY KEY (id_player, id_turn);
-ALTER TABLE players_play 
-    ADD CONSTRAINT FK_pp_players FOREIGN KEY (id_player) REFERENCES players(id_player);
-ALTER TABLE players_play 
-    ADD CONSTRAINT FK_pp_turns FOREIGN KEY (id_turn) REFERENCES turns(id_turn);
+CREATE TABLE players_play (
+    id_player INT NOT NULL,
+    id_turn INT NOT NULL,
+    start_time DATETIME NOT NULL,
+    end_time DATETIME NOT NULL,
+    action VARCHAR(10) NOT NULL,
+    origin_position_col VARCHAR(10) NULL,
+    origin_position_row VARCHAR(10) NULL,
+    target_position_col VARCHAR(10) NULL,
+    target_position_row VARCHAR(10) NULL,
+    CONSTRAINT PK_players_play PRIMARY KEY (id_player, id_turn),
+    CONSTRAINT FK_pp_players FOREIGN KEY (id_player) REFERENCES players(id_player),
+    CONSTRAINT FK_pp_turns FOREIGN KEY (id_turn) REFERENCES turns(id_turn)
+);
