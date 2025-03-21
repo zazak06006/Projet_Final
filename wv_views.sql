@@ -1,4 +1,6 @@
--- ALL_PLAYERS
+--------------------------------
+-- ALL_PLAYERS - Vue des joueurs avec leurs statistiques de participation
+--Création de la vue
 CREATE OR ALTER VIEW ALL_PLAYERS AS
 SELECT 
     p.pseudo AS 'nom du joueur',
@@ -14,12 +16,10 @@ FROM
 GROUP BY 
     p.pseudo
 HAVING 
-    COUNT(DISTINCT pip.id_party) > 0
-ORDER BY 
-    'nombre de parties jouées' DESC,
-    'date et heure de la première participation',
-    'date et heure de la dernière action',
-    'nom du joueur';
+    COUNT(DISTINCT pip.id_party) > 0;
 
-    
--- ALL_PLAYERS_ELAPSED_GAME
+--Affichage de la vue
+select * from ALL_PLAYERS;
+
+--------------------------------
+-- ALL_PLAYERS_ELAPSED_GAME - Vue des joueurs avec leurs statistiques de temps de jeu
